@@ -174,6 +174,7 @@ uint16_t max_display_update_time = 0;
   void lcd_main_menu();
   void lcd_tune_menu();
   void lcd_prepare_menu();
+  void lcd_ez_menu();
   void lcd_move_menu();
   void lcd_control_menu();
   void lcd_control_temperature_menu();
@@ -2530,7 +2531,7 @@ void lcd_quick_feedback(const bool clear_buttons) {
       MENU_ITEM(function, "7 " MSG_UBL_SAVE_MESH, _lcd_ubl_save_mesh_cmd);
       END_MENU();
     }
-
+    
     /**
      * UBL System submenu
      *
@@ -2563,7 +2564,6 @@ void lcd_quick_feedback(const bool clear_buttons) {
     }
 
   #endif // AUTO_BED_LEVELING_UBL
-
 
   #if ENABLED(LCD_BED_LEVELING) || (HAS_LEVELING && DISABLED(SLIM_LCD_MENUS))
     void _lcd_toggle_bed_leveling() { set_bed_leveling_enabled(!planner.leveling_active); }
@@ -2656,6 +2656,11 @@ void lcd_quick_feedback(const bool clear_buttons) {
     // ^ Main
     //
     MENU_BACK(MSG_MAIN);
+
+    //
+    // UBL skit
+    //
+    MENU_ITEM(submenu, "UBL Skit", lcd_ez_menu);
 
     //
     // Move Axis
@@ -2908,6 +2913,28 @@ void lcd_quick_feedback(const bool clear_buttons) {
     }
 
   #endif // DELTA_CALIBRATION_MENU || DELTA_AUTO_CALIBRATION
+
+      /**
+     * UBL Skit
+     * 
+     * << Prepare
+     * Run UBL code
+     * Save Delta height
+     * Run levling code
+     * Run G26
+     * Save settings
+     */
+    void lcd_ez_menu() {
+      START_MENU();
+      MENU_BACK(MSG_PREPARE);
+      MENU_ITEM(gcode, "Run UBL code", PSTR("G28\nG33\nM500"));
+      MENU_ITEM(gcode, "Save Delta height", PSTR("M665 A\nM500\nG92 Z0"));
+      MENU_ITEM_EDIT_CALLBACK(float52sign, MSG_DELTA_HEIGHT, &delta_height, delta_height - 10, delta_height + 10, _recalc_delta_settings);
+      MENU_ITEM(gcode, "Run Levling Code", PSTR("G29 P1\nG29 T\nG29 S1\nG29 F 10.0\nG29 A\nM500"));
+      MENU_ITEM(gcode, "Run G26", PSTR("G26"));
+      MENU_ITEM(gcode, "Save settings", PSTR("M500"));
+      END_MENU();
+    }
 
   /**
    * If the most recent manual move hasn't been fed to the planner yet,
